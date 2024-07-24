@@ -223,10 +223,10 @@ public class FrontendServer {
                         break;
                 }
                 break;
-            case "tts":
+            /*case "tts":
                 String message = json.getMember("say").toString();
                 RobotManager.getSharedInstance().tts.say(message);
-                break;
+                break;*/
             default:
                 LOG.debug("Message of type '" + type + "' not implemented. ");
                 break;

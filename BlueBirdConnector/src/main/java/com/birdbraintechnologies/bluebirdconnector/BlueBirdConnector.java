@@ -1,6 +1,6 @@
 package com.birdbraintechnologies.bluebirdconnector;
 
-import javafx.application.Application;
+/*import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
@@ -13,7 +13,7 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
+import javafx.stage.WindowEvent;*/
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -31,9 +31,11 @@ import java.util.*;
 
 import netscape.javascript.JSObject;
 
+import javax.swing.*;
+
 import static com.birdbraintechnologies.bluebirdconnector.Utilities.stackTraceToString;
 
-public class BlueBirdConnector extends Application{
+public class BlueBirdConnector {//extends Application{
 
     static final Logger LOG = LoggerFactory.getLogger(BlueBirdConnector.class);
     //static final Properties prop = new Properties();
@@ -42,9 +44,9 @@ public class BlueBirdConnector extends Application{
     private Double screen_height = 700.0;
     private boolean useTTS = false;
 
-    private FrontendServer frontendServer = FrontendServer.getSharedInstance();
+    //private FrontendServer frontendServer = FrontendServer.getSharedInstance();
     private RobotManager robotManager = RobotManager.getSharedInstance();
-    private Thread webServerThread;
+    //private Thread webServerThread;
 
 
     public static void main(String[] args) {
@@ -57,10 +59,30 @@ public class BlueBirdConnector extends Application{
         }
 
         LOG.info("Ready to launch - " + argString);
-        launch(args);
+        //launch(args);
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                    if ("Nimbus".equals(info.getName())) {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // If Nimbus is not available, you can set the GUI to another look and feel.
+                System.out.println("Could not set Nimbus look and feel.");
+            }
+
+
+            GUI gui = GUI.getSharedInstance();
+            gui.initialize();
+            startHttpServer();
+        });
+
     }
 
-    @Override
+    /*@Override
     public void start(Stage stage) throws Exception {
         String[] args = getParameters().getRaw().toArray(new String[0]);
         if (args.length > 0) {
@@ -70,10 +92,10 @@ public class BlueBirdConnector extends Application{
 
         startGUI(stage);
         startHttpServer();
-    }
+    }*/
 
 
-    private void startGUI (Stage stage) {
+    /*private void startGUI (Stage stage) {
         Platform.runLater(() -> {
             try {
                 Platform.setImplicitExit(false);
@@ -161,11 +183,11 @@ public class BlueBirdConnector extends Application{
                 showErrorDialog("ERROR", "Cannot Start GUI", "The app encountered the following  error and had to stop: \n\n" + sStackTrace, true);
             }
         });
-    }
+    }*/
 
-    public void startHttpServer() {
+    public static void startHttpServer() {
 
-        webServerThread = new Thread() {
+        Thread webServerThread = new Thread() {
             public Server server;
             @Override
             public void run() {
@@ -225,7 +247,8 @@ public class BlueBirdConnector extends Application{
                         LOG.error(message);
                         LOG.error("{}", stackTraceToString(e));
 
-                        showErrorDialog("ERROR", "Bluebird Connector Already Running", message, true);
+                        //showErrorDialog("ERROR", "Bluebird Connector Already Running", message, true);
+                        GUI.getSharedInstance().showErrorDialog("ERROR", "Bluebird Connector Already Running", message, true);
                     } finally {
                         /*if (!abortLaunch) {
                             blueBirdDriverThread.start();
@@ -251,7 +274,7 @@ public class BlueBirdConnector extends Application{
         webServerThread.start();
     }
 
-    public static void showErrorDialog(String title, String header, String message, boolean abort) {
+    /*public static void showErrorDialog(String title, String header, String message, boolean abort) {
         Platform.runLater(() -> {
             try {
                 Alert alert = new Alert(AlertType.ERROR);
@@ -271,7 +294,7 @@ public class BlueBirdConnector extends Application{
                 ex.printStackTrace();
             }
         });
-    }
+    }*/
 
 
 }

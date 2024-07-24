@@ -27,7 +27,7 @@ public class RobotManager {
     private boolean setupInProgress = false;
 
     //Accessibility options
-    public TextToSpeech tts = null;
+    //public TextToSpeech tts = null;
     public boolean autoConnect = false;
     private boolean autoCalibrate = false;
 
@@ -104,11 +104,13 @@ public class RobotManager {
         //Currently, the only communicator that can be marked unavailable is native ble
         if (!available) { nativeBleAvailable = false; }
 
-        FrontendServer.getSharedInstance().updateBleStatus(connected);
+        //FrontendServer.getSharedInstance().updateBleStatus(connected);
+        GUI.getSharedInstance().setIndicator(false, connected);
         if (!connected) {
             if (robotCommunicator != null) { robotCommunicator.kill(); }
             //robotCommunicator = null;
-            FrontendServer.getSharedInstance().updateGUIScanStatus(false);
+            //FrontendServer.getSharedInstance().updateGUIScanStatus(false);
+            GUI.getSharedInstance().setScanStatus(false);
             setUpRobotCommunicator();
         }
     }
@@ -121,12 +123,12 @@ public class RobotManager {
         return sharedInstance;
     }
 
-    public void setupTTS(String[] args) {
+    /*public void setupTTS(String[] args) {
         tts = new TextToSpeech("Starting BlueBird Connector");
         autoConnect = true;
         if (args.length > 1) { autoCalibrate = true; }//prop.setProperty("TTS", "autoCalibrate"); }
 
-    }
+    }*/
 
     public void startDiscovery(){
         if (robotCommunicator == null || !robotCommunicator.isRunning()){
