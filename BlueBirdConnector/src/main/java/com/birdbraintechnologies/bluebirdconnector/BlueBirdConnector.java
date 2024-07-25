@@ -65,6 +65,7 @@ public class BlueBirdConnector {//extends Application{
             try {
                 for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                     if ("Nimbus".equals(info.getName())) {
+                        System.out.println("Using Nimbus look and feel");
                         UIManager.setLookAndFeel(info.getClassName());
                         break;
                     }

@@ -207,6 +207,10 @@ public class RobotManager {
         return selectedRobots[index];
     }
 
+    public Robot[] getConnectedRobotList() {
+        return selectedRobots;
+    }
+
     public void calibrate(String deviceLetter) {
         Robot robot = getConnectedRobot(deviceLetter.charAt(0), "Cannot calibrate.");
         if (robot != null) { robot.startCalibration(); }

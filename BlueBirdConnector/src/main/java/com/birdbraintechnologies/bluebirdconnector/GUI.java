@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,14 +31,20 @@ public class GUI extends JFrame {
     private RobotManager robotManager = RobotManager.getSharedInstance();
     private boolean autoconnectRequested = false;
 
+    private Translations tr = Translations.getSharedInstance();
+
     private int screen_width = 800;
     private int screen_height = 700;
 
     private JPanel bannerPanel;
+    private JLabel wifiLabel;
     private JLabel wifiIndicator;
+    private JLabel bleLabel;
     private JLabel bleIndicator;
     private ImageIcon redDot;
     private ImageIcon greenDot;
+    private Boolean bleAvailable = null;
+    private Boolean wifiAvailable = null;
 
     private JPanel findPanel;
     private JButton findBn;
@@ -66,54 +73,82 @@ public class GUI extends JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("BlueBird Connector");
 
+        tr.setLanguage(null); //Set to the system language
+
         Dimension screenBounds = Toolkit.getDefaultToolkit().getScreenSize();
         if (screen_width > screenBounds.getWidth())
             screen_width = (int)screenBounds.getWidth() - 50;
         if (screen_height > screenBounds.getHeight())
             screen_height = (int)screenBounds.getHeight() - 50;
 
-        bannerPanel = new JPanel();
+        SpringLayout bannerLayout = new SpringLayout();
+        bannerPanel = new JPanel(bannerLayout);
         bannerPanel.setBackground(Color.white);
         bannerPanel.setPreferredSize(new Dimension(screen_width, 100));
 
-        ImageIcon bbtLogo = createImageIcon("/images/birdbrain-logo-h.png", "BirdBrain Technologies", 365, 100);
+        ImageIcon circuitry = createImageIcon("/images/pattern-blue-circuitry.png", "", 600, -1);
+        JLabel circuitryLabel = new JLabel(circuitry);
+        bannerPanel.add(circuitryLabel);
+        bannerLayout.putConstraint(SpringLayout.NORTH, circuitryLabel, 0, SpringLayout.NORTH, bannerPanel);
+        bannerLayout.putConstraint(SpringLayout.WEST, circuitryLabel, 0, SpringLayout.WEST, bannerPanel);
+        JLabel circuitryLabel2 = new JLabel(circuitry);
+        bannerPanel.add(circuitryLabel2);
+        bannerLayout.putConstraint(SpringLayout.NORTH, circuitryLabel2, 0, SpringLayout.NORTH, bannerPanel);
+        bannerLayout.putConstraint(SpringLayout.WEST, circuitryLabel2, 600, SpringLayout.WEST, bannerPanel);
+
+        ImageIcon bbtLogo = createImageIcon("/images/birdbrain-logo-h.png", "BirdBrain Technologies", -1, 80);
         JLabel logoLabel = new JLabel(bbtLogo);
         bannerPanel.add(logoLabel);
+        bannerLayout.putConstraint(SpringLayout.HORIZONTAL_CENTER, logoLabel, 0, SpringLayout.HORIZONTAL_CENTER, bannerPanel);
+        bannerLayout.putConstraint(SpringLayout.VERTICAL_CENTER, logoLabel, 0, SpringLayout.VERTICAL_CENTER, bannerPanel);
 
         ImageIcon wifiIcon = createImageIcon("/images/wifi-solid.png", "Wifi", 0, 0);
-        JLabel wifiLabel = new JLabel(wifiIcon);
+        wifiLabel = new JLabel(wifiIcon);
+        wifiLabel.getAccessibleContext().setAccessibleDescription("wifi is disabled");
+        wifiLabel.setFocusable(true);
         bannerPanel.add(wifiLabel);
+        bannerLayout.putConstraint(SpringLayout.NORTH, wifiLabel, 5, SpringLayout.NORTH, bannerPanel);
 
         redDot = createImageIcon("/images/circle-solid-red.png", "not connected", 0, 0);
         greenDot = createImageIcon("/images/circle-solid-green.png", "connected", 0, 0);
         wifiIndicator = new JLabel(redDot);
         bannerPanel.add(wifiIndicator);
+        bannerLayout.putConstraint(SpringLayout.NORTH, wifiIndicator, 35, SpringLayout.NORTH, bannerPanel);
+        bannerLayout.putConstraint(SpringLayout.EAST, wifiLabel, 0, SpringLayout.WEST, wifiIndicator);
+        bannerLayout.putConstraint(SpringLayout.EAST, wifiIndicator, -5, SpringLayout.EAST, bannerPanel);
         setIndicator(true, internetIsAvailable()); //TODO: update this sometime!
 
         ImageIcon bleIcon = createImageIcon("/images/bluetooth-brands-solid.png", "Bluetooth", 0, 0);
-        JLabel bleLabel = new JLabel(bleIcon);
+        bleLabel = new JLabel(bleIcon);
+        bleLabel.getAccessibleContext().setAccessibleDescription("bluetooth is disabled");
+        bleLabel.setFocusable(true);
         bannerPanel.add(bleLabel);
+        bannerLayout.putConstraint(SpringLayout.SOUTH, bleLabel, -5, SpringLayout.SOUTH, bannerPanel);
 
         bleIndicator = new JLabel(redDot);
         bannerPanel.add(bleIndicator);
+        bannerLayout.putConstraint(SpringLayout.SOUTH, bleIndicator, -5, SpringLayout.SOUTH, bannerPanel);
+        bannerLayout.putConstraint(SpringLayout.EAST, bleLabel, 0, SpringLayout.WEST, bleIndicator);
+        bannerLayout.putConstraint(SpringLayout.EAST, bleIndicator, -10, SpringLayout.EAST, bannerPanel);
+        if (bleAvailable != null) { //May be set before gui initialized
+            setIndicator(false, bleAvailable);
+        }
 
-        findPanel = new JPanel();
+        SpringLayout findLayout = new SpringLayout();
+        findPanel = new JPanel(findLayout);
         findPanel.setBackground(bbtBlue);
-        findPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        findPanel.setPreferredSize(new java.awt.Dimension(screen_width, 100));
+        //findPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        findPanel.setPreferredSize(new Dimension(screen_width, 100));
 
         findBn = new JButton();
-        findBn.setOpaque(true);
         findBn.setBackground(neonCarot);
         findBn.setFont(new Font("Helvetica Neue", Font.BOLD, 18)); // NOI18N
         findBn.setForeground(Color.white);
-        findBn.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        findBn.setText("FIND ROBOTS");
-        findBn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        findBn.setAlignmentY(Component.CENTER_ALIGNMENT);
-        findBn.setPreferredSize(new Dimension(150, 30));
+        findBn.setText(tr.translate("find_robots"));
         findBn.addActionListener(this::findBnActionPerformed);
         findPanel.add(findBn);
+        findLayout.putConstraint(SpringLayout.NORTH, findBn, 20, SpringLayout.NORTH, findPanel);
+        findLayout.putConstraint(SpringLayout.HORIZONTAL_CENTER, findBn, 0, SpringLayout.HORIZONTAL_CENTER, findPanel);
 
         discoveryList = new DefaultListModel();
         foundRobots = new JList(discoveryList); //can also set list with foundRobots.setModel(discoveryList)
@@ -121,11 +156,16 @@ public class GUI extends JFrame {
         foundRobots.setLayoutOrientation(JList.VERTICAL); //Vertical is default
         FoundRobotCell cell = new FoundRobotCell();
         foundRobots.setCellRenderer(cell);
-        findPanel.add(foundRobots);
+        //findPanel.add(foundRobots);
 
         resultsPanel = new JPanel();
         resultsPanel.setBackground(seance);
         resultsPanel.setPreferredSize(new Dimension(screen_width, screen_height-200));
+
+        JButton snapBn = new JButton(tr.translate("start_programming"));
+        snapBn.setBackground(neonCarot);
+        snapBn.addActionListener(this::snapBnActionPerformed);
+        resultsPanel.add(snapBn);
 
         Container contentPane = getContentPane();
         contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.PAGE_AXIS));
@@ -144,11 +184,13 @@ public class GUI extends JFrame {
         java.net.URL imgURL = GUI.class.getResource(path);
         if (imgURL != null) {
             ImageIcon imageIcon = new ImageIcon(imgURL, description);
-            if (width != 0) {
+            if (width != 0 && height != 0) { //getScaledInstance throws IllegalArgumentException if w or h is 0
                 Image image = imageIcon.getImage(); // transform it
-                Image newimg = image.getScaledInstance(width, height,  Image.SCALE_SMOOTH); // scale it the smooth way
-                imageIcon = new ImageIcon(newimg);  // transform it back
+                //if either width or height are negative, uses other value and maintains aspect ratio
+                Image newImg = image.getScaledInstance(width, height,  Image.SCALE_SMOOTH); // scale it the smooth way
+                imageIcon = new ImageIcon(newImg);  // transform it back
             }
+            imageIcon.getAccessibleContext().setAccessibleDescription(description);
             return imageIcon;
         } else {
             System.err.println("Couldn't find file: " + path);
@@ -164,9 +206,86 @@ public class GUI extends JFrame {
             System.exit(1);
     }
 
-    private void findBnActionPerformed(java.awt.event.ActionEvent evt) {
+    private void findBnActionPerformed(ActionEvent evt) {
         System.out.println("FIND ROBOTS clicked!");
+        findBn.setText(tr.translate("finding_robots"));
         showErrorDialog("find robots clicked", "I don't know what this is for", "it was clicked", true);
+    }
+
+    private void snapBnActionPerformed(ActionEvent evt) {
+        String projectName = "";
+        Robot[] connectedDeviceList = robotManager.getConnectedRobotList();
+        if (connectedDeviceList.length == 1) {
+            if (connectedDeviceList[0].name.startsWith("FN")) {
+                projectName = "FinchSingleDeviceStarterProject";
+            } else {
+                projectName = "HummingbirdSingleDeviceStarterProject";
+            }
+        } else {
+            if (allRobotsAreFinches(connectedDeviceList)) {
+                projectName = "FinchMultiDeviceStarterProject";
+            } else if (noRobotsAreFinches(connectedDeviceList)) {
+                projectName = "HummingbirdMultiDeviceStarterProject";
+            } else {
+                projectName = "MixedMultiDeviceStarterProject";
+            }
+        }
+
+
+        String lang = tr.getCurrentLanguage();
+
+        boolean shouldOpenOnline = true;//TODO: use slider results
+
+        String urlString = "http://127.0.0.1:30061/snap.html#open:/snapProjects/" + projectName + ".xml&editMode&noRun&lang=" + lang;
+        if (wifiAvailable && shouldOpenOnline) {
+            urlString = "https://snap.berkeley.edu/snapsource/snap.html#present:Username=birdbraintech&ProjectName=" + projectName + "&editMode&noRun&lang=" + lang;
+        }
+
+        LOG.info("Opening " + urlString);
+        String osName = System.getProperty("os.name");
+        //Snap is best used in chrome. Try to open chrome first.
+        try {
+            final String dir = System.getProperty("user.dir");
+            LOG.debug("OS = {}; user dir = {}" , osName, dir);
+
+            if (osName.contains("Win")) {
+                Runtime.getRuntime().exec(new String[]{"cmd", "/c","start chrome \"" + urlString + "\""});
+            } else { //Linux
+                Runtime.getRuntime().exec(new String[] { "chromium-browser", urlString });
+            }
+        } catch (Exception exception) {
+            LOG.info("Could not open url in chrome. Trying the default browser. Exception: " + exception.getMessage());
+            try {
+                if (osName.contains("Win")) {
+                    Desktop.getDesktop().browse(new URL(urlString).toURI());
+                } else { //Linux
+                    LOG.debug("using xdg-open");
+                    Runtime.getRuntime().exec(new String[] { "xdg-open", urlString });
+                }
+            } catch (Exception e) {
+                LOG.error("Failed to open url {}", urlString);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean allRobotsAreFinches(Robot[] connectedDeviceList) {
+        boolean onlyFinches = true;
+        for (int i = 0; i < connectedDeviceList.length; i++) {
+            if (!connectedDeviceList[i].name.startsWith("FN")) {
+                onlyFinches = false;
+            }
+        }
+        return onlyFinches;
+    }
+    private boolean noRobotsAreFinches(Robot[] connectedDeviceList) {
+        boolean noFinches = true;
+        for (int i = 0; i < connectedDeviceList.length; i++) {
+            if (connectedDeviceList[i].name.startsWith("FN")) {
+                noFinches = false;
+            }
+        }
+        return noFinches;
     }
 
     private static boolean internetIsAvailable() {
@@ -186,15 +305,24 @@ public class GUI extends JFrame {
 
     public void setIndicator(Boolean wifi, Boolean connected) {
         ImageIcon icon = redDot;
+        String connTxt = "disabled";
         if (connected) {
             icon = greenDot;
+            connTxt = "enabled";
         }
 
         if (wifi) {
+            wifiAvailable = connected;
             wifiIndicator.setIcon(icon);
+            wifiLabel.getAccessibleContext().setAccessibleDescription("wifi is " + connTxt);
         } else {
-            bleIndicator.setIcon(icon);
+            bleAvailable = connected;
+            if (bleIndicator != null) { //ble may be set before gui setup
+                bleIndicator.setIcon(icon);
+                bleLabel.getAccessibleContext().setAccessibleDescription("bluetooth is " + connTxt);
+            }
         }
+
     }
 
     public void setScanStatus(Boolean scanning) {
