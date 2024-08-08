@@ -94,6 +94,19 @@
             <artifactId>jSerialComm</artifactId>
             <version>[2.0.0,3.0.0)</version>
         </dependency>
+
+        <!-- Add videos to swing interface -->
+        <!--<dependency>
+            <groupId>javax.media</groupId>
+            <artifactId>jmf</artifactId>
+            <version>2.1.1e</version>
+        </dependency> -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
         <!-- Another possibility for serial ports
         <dependency>
             <groupId>javax.comm</groupId>

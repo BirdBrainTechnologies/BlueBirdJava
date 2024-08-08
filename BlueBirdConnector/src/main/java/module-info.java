@@ -11,6 +11,9 @@ module BlueBirdConnector {
     requires com.fazecast.jSerialComm;
     requires java.logging;
     requires freetts;
+    //requires javax.media;
+    requires javafx.media;
+    requires javafx.swing;
 
     exports com.birdbraintechnologies.bluebirdconnector;
 }

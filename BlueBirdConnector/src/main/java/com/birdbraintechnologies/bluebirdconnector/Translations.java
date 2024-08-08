@@ -273,18 +273,6 @@ public class Translations {
 
 
     /**
-     * translateStrings - Translate all strings initially present in the UI, if a
-     * translation table has been selected.
-     */
-    /*function translateStrings() {
-        if (translationTable == null) { return; }
-        // Set up defaults
-        $('#findBtnText').text(" " + translationTable["find_robots"]);
-        $('#connection-state').html(translationTable["connected"]);
-        $('#start_programming').html(translationTable["start_programming"]);
-    }*/
-
-    /**
      * setLanguage - Set the app language based on the navigator language. Set to
      * English if the language is not supported. Translate initial strings once set.
      */
@@ -296,7 +284,8 @@ public class Translations {
         LOG.info("setting language = " + language);
 
         if (language.startsWith("zh")) {
-            if (language == "zh-TW") { language = "zh_Hant"; } // Specify trad chinese
+            String countryCode = System.getProperty("user.country");
+            if (countryCode.equals("TW")) { language = "zh_Hant"; } // Specify trad chinese
             else { language = "zh_Hans"; } // Default to simplified chinese for any other variant
         } else {
             language = language.substring(0, 2); // require the 2 letter code.

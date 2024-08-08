@@ -10,13 +10,26 @@
 
 package com.birdbraintechnologies.bluebirdconnector;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.DoubleProperty;
+import javafx.scene.media.*;
+import javafx.embed.swing.JFXPanel;
+//import javafx.event.ActionEvent;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+
+import javafx.stage.Screen;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+//import javax.media.Manager;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -45,6 +58,7 @@ public class GUI extends JFrame {
     private ImageIcon greenDot;
     private Boolean bleAvailable = null;
     private Boolean wifiAvailable = null;
+    private boolean scanning = false;
 
     private JPanel findPanel;
     private JButton findBn;
@@ -57,6 +71,10 @@ public class GUI extends JFrame {
     private Color bbtBlue = new Color(8, 155, 171);
     private Color neonCarot = new Color(255, 152, 34);
     private Color seance = new Color(137, 17, 153);
+
+    //Fonts
+    private Font bnFont = new Font("Helvetica Neue", Font.BOLD, 18);
+    private Font titleFont = new Font("Helvetica Neue", Font.BOLD, 30);
 
     private GUI() {
 
@@ -142,9 +160,9 @@ public class GUI extends JFrame {
 
         findBn = new JButton();
         findBn.setBackground(neonCarot);
-        findBn.setFont(new Font("Helvetica Neue", Font.BOLD, 18)); // NOI18N
+        findBn.setFont(bnFont); // NOI18N
         findBn.setForeground(Color.white);
-        findBn.setText(tr.translate("find_robots"));
+        findBn.setText(tr.translate(scanning ? "finding_robots" : "find_robots"));
         findBn.addActionListener(this::findBnActionPerformed);
         findPanel.add(findBn);
         findLayout.putConstraint(SpringLayout.NORTH, findBn, 20, SpringLayout.NORTH, findPanel);
@@ -183,6 +201,7 @@ public class GUI extends JFrame {
                                                String description, int width, int height) {
         java.net.URL imgURL = GUI.class.getResource(path);
         if (imgURL != null) {
+            System.out.println("IMAGE URL!!!! " + imgURL.toString());
             ImageIcon imageIcon = new ImageIcon(imgURL, description);
             if (width != 0 && height != 0) { //getScaledInstance throws IllegalArgumentException if w or h is 0
                 Image image = imageIcon.getImage(); // transform it
@@ -208,8 +227,21 @@ public class GUI extends JFrame {
 
     private void findBnActionPerformed(ActionEvent evt) {
         System.out.println("FIND ROBOTS clicked!");
-        findBn.setText(tr.translate("finding_robots"));
-        showErrorDialog("find robots clicked", "I don't know what this is for", "it was clicked", true);
+
+        //showErrorDialog("find robots clicked", "I don't know what this is for", "it was clicked", true);
+
+        if (bleAvailable) {
+            if (scanning) {
+                findBn.setText(tr.translate("find_robots"));
+                robotManager.stopDiscovery();
+            } else {
+                findBn.setText(tr.translate("finding_robots"));
+                robotManager.startDiscovery();
+            }
+
+        } else {
+            Modal modal = new Modal(this, "Plug_in_Dongle.mp4");
+        }
     }
 
     private void snapBnActionPerformed(ActionEvent evt) {
@@ -325,8 +357,14 @@ public class GUI extends JFrame {
 
     }
 
-    public void setScanStatus(Boolean scanning) {
-
+    public void setScanStatus(Boolean isScanning) {
+        scanning = isScanning;
+        if (findBn == null) { return; }
+        if (scanning) {
+            findBn.setText(tr.translate("finding_robots"));
+        } else {
+            findBn.setText(tr.translate("find_robots"));
+        }
     }
 
     public void receiveScanResponse(String name, JSONObject discoveryInfo){
@@ -378,4 +416,117 @@ public class GUI extends JFrame {
         }
     }
 
+    private class Modal extends JDialog {
+        public Modal(JFrame frame, String title) {
+            super(frame);
+
+            String video = null;
+            if (title.endsWith(".mp4")) {
+                video = title;
+                switch (video){
+                    case "HummBit_Calibration.mp4":
+                    case "MicroBit_Calibration.mp4":
+                    case "Finch_Calibration.mp4":
+                    case "HummBit_V2_Calibration.mp4":
+                    case "MicroBit_V2_Calibration.mp4":
+                    case "Finch_V2_Calibration.mp4":
+                        title = tr.translate("CompassCalibrate");
+                        break;
+                    case "NativeMacBLEon.mp4":
+                    case "Plug_in_Dongle.mp4":
+                        title = tr.translate("Connection_Failure");
+                        break;
+                    default:
+                        LOG.error("unsupported video " + video);
+                }
+            }
+
+            JPanel titlePanel = new JPanel();
+            JLabel titleLabel = new JLabel(title);
+            titleLabel.setFont(titleFont);
+            titleLabel.setForeground(Color.white);
+            titlePanel.add(titleLabel);
+            titlePanel.setBackground(seance);
+            titlePanel.setPreferredSize(new Dimension(screen_width * 3/4, screen_height * 1/8));
+
+            JPanel contentPanel = new JPanel();
+            if (video != null) {
+                /*
+                //create the media player with the media url
+                Player mediaPlayer = Manager.createRealizedPlayer("/videos/" + video);
+                //get components for video and playback controls
+                Component video = mediaPlayer.getVisualComponent();
+                */
+                try {
+
+                    final JFXPanel VFXPanel = new JFXPanel();
+
+                    java.net.URL imgURL = GUI.class.getResource("/videos/" + video);
+                    System.out.println(imgURL.toString());
+                    //File video_source = new File(imgURL.toString());
+                    Media m = new Media(imgURL.toURI().toString()); //new Media(video_source.toURI().toString());
+                    MediaPlayer player = new MediaPlayer(m);
+                    MediaView viewer = new MediaView(player);
+
+                    StackPane root = new StackPane();
+                    Scene scene = new Scene(root);
+
+                    // center video position
+                    javafx.geometry.Rectangle2D screen = Screen.getPrimary().getVisualBounds();
+                    viewer.setX((screen.getWidth() - contentPanel.getWidth()) / 2);
+                    viewer.setY((screen.getHeight() - contentPanel.getHeight()) / 2);
+
+                    // resize video based on screen size
+                    /*DoubleProperty width = viewer.fitWidthProperty();
+                    DoubleProperty height = viewer.fitHeightProperty();
+                    width.bind(Bindings.selectDouble(viewer.sceneProperty(), "width"));
+                    height.bind(Bindings.selectDouble(viewer.sceneProperty(), "height"));*/
+                    viewer.setPreserveRatio(true);
+                    viewer.setFitHeight(screen_height/2);
+
+                    // add video to stackpane
+                    root.getChildren().add(viewer);
+
+                    VFXPanel.setScene(scene);
+                    //player.play();
+                    player.setAutoPlay(true);
+                    //player.setOnEndOfMedia(player::play);
+                    player.setCycleCount(MediaPlayer.INDEFINITE);
+                    contentPanel.setLayout(new BorderLayout());
+                    contentPanel.add(VFXPanel, BorderLayout.CENTER);
+                    contentPanel.setPreferredSize(new Dimension(screen_width * 3/4, screen_height/2));
+                } catch (Exception e) {
+                    LOG.error("Exception playing video: " + e.getMessage());
+                }
+            }
+
+            Container contentPane = getContentPane();
+            contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.PAGE_AXIS));
+            contentPane.add(titlePanel);
+            contentPane.add(contentPanel);
+
+            this.pack();
+
+            this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            this.setLocationRelativeTo(frame);
+            this.setAlwaysOnTop(true);
+            this.addWindowFocusListener(new WindowFocusListener() {
+
+                public void windowGainedFocus(WindowEvent e) {
+                    //do nothing
+                }
+
+                public void windowLostFocus(WindowEvent e) {
+                    if (SwingUtilities.isDescendingFrom(e.getOppositeWindow(), Modal.this)) {
+                        return;
+                    }
+                    Modal.this.setVisible(false);
+                }
+
+            });
+
+            this.setVisible(true);
+
+        }
+    }
 }
